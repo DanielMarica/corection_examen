@@ -1,5 +1,6 @@
 import 'package:examen_juin1/view_models/app_view_model.dart';
 import 'package:examen_juin1/views/screens/cart_screen.dart';
+import 'package:examen_juin1/views/widgets/form_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,7 @@ final GoRouter _router = GoRouter(
           path: 'cart-screen',
           builder: (context, state) => const CartScreen(),
         ),
+        GoRoute(path: 'form', builder: (context, state) => const FormScreen()),
       ],
     ),
   ],

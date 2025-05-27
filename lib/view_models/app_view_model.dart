@@ -28,6 +28,11 @@ class AppViewModel with ChangeNotifier {
 
   double get sum => cartItem.fold(0, (a, b) => a + b.count * b.dish.price);
 
+  void addDish(Dish dish) {
+    _dishes.add(dish);
+    notifyListeners();
+  }
+
   Future<void> increaseDish(Dish dish) async {
     final item = _cart.firstWhere(
       (item) => item.dish == dish,

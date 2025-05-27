@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../services/dish_service.dart';
 import '../../view_models/app_view_model.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -19,11 +18,21 @@ class HomeScreen extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart),
-                onPressed: () {
-                  context.go("/cart-screen");
-                },
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.add_business),
+                    onPressed: () {
+                      context.go("/form");
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.shopping_cart),
+                    onPressed: () {
+                      context.go("/cart-screen");
+                    },
+                  ),
+                ],
               ),
               Positioned(
                 right: 3,
@@ -49,22 +58,12 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: Future.delayed(const Duration(seconds: 3), () => fetchDishes()),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            // Completed with a value
-            final dishs = snapshot.data!;
-            return MenuWidget(menu: dishs);
+      body: Consumer<AppViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.dish.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
           }
-
-          if (snapshot.hasError) {
-            // Completed with an error
-            return Center(child: Text("${snapshot.error}"));
-          }
-
-          // Uncompleted
-          return const Center(child: CircularProgressIndicator());
+          return MenuWidget(menu: viewModel.dish);
         },
       ),
     );
