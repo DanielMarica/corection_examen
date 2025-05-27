@@ -1,9 +1,10 @@
-# 🍽️ Menu App – Flutter + Provider + SQLite
+# 🍽️ Menu App – Flutter + Provider + SQLite + File Editor
 
 ![Flutter](https://img.shields.io/badge/Framework-Flutter-blue?style=flat-square)
 ![Provider](https://img.shields.io/badge/State_Management-Provider-green?style=flat-square)
 ![SQLite](https://img.shields.io/badge/Database-SQLite-orange?style=flat-square)
 ![Dart](https://img.shields.io/badge/Language-Dart-lightblue?style=flat-square)
+![File Editor](https://img.shields.io/badge/Feature-File_Editor-purple?style=flat-square)
 
 ---
 
@@ -24,6 +25,7 @@ flutter pub add path
 flutter pub add sqflite_common_ffi
 flutter pub add sqflite_common_ffi_web
 flutter pub add intl
+flutter pub add file_picker
 flutter pub get
 dart run sqflite_common_ffi_web:setup
 ```
@@ -47,6 +49,7 @@ dependencies:
   sqflite_common_ffi: ^2.3.3
   sqflite_common_ffi_web: ^1.0.0
   intl: ^0.20.2
+  file_picker: ^6.1.1
 
 dev_dependencies:
   flutter_test:
@@ -143,6 +146,127 @@ body: Consumer<AppViewModel>(
 
 - Si la liste est vide, un `loader` est affiché
 - Sinon, un widget `MenuWidget` personnalisé affiche les plats
+
+---
+
+## 📝 Éditeur de Fichiers Intégré
+
+### 🌟 Nouvelles Fonctionnalités
+
+L'application inclut maintenant un **éditeur de fichiers complet** avec les fonctionnalités suivantes :
+
+- ✅ **Création de nouveaux fichiers texte**
+- ✅ **Ouverture de fichiers existants** (txt, md, json, csv)
+- ✅ **Sauvegarde avec dialogue natif** (ou téléchargement sur web)
+- ✅ **Interface adaptée par plateforme** (web vs mobile/desktop)
+- ✅ **Gestion d'erreurs complète**
+- ✅ **Support UTF-8** pour l'encodage des caractères
+
+### 📌 Navigation vers l'Éditeur
+
+```dart
+// Depuis EditScreen - Créer un nouveau fichier
+context.go('/open-creation');
+
+// Depuis EditScreen - Ouvrir un fichier existant
+context.go('/open-existing', extra: platformFile);
+```
+
+### 📌 Configuration des Routes pour l'Éditeur
+
+```dart
+final GoRouter _router = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const HomeScreen(),
+      routes: [
+        // ... autres routes
+        
+        // Route pour créer un nouveau fichier
+        GoRoute(
+          path: 'open-creation',
+          builder: (context, state) {
+            final PlatformFile? file = state.extra as PlatformFile?;
+            return FileCreationScreen(file: file);
+          },
+        ),
+        
+        // Route pour ouvrir un fichier existant
+        GoRoute(
+          path: 'open-existing',
+          builder: (context, state) {
+            final PlatformFile? file = state.extra as PlatformFile?;
+            return FileCreationScreen(file: file);
+          },
+        ),
+      ],
+    ),
+  ],
+);
+```
+
+### 📌 Utilisation du Sélecteur de Fichiers
+
+```dart
+// Dans EditScreen - Sélection d'un fichier
+Future<void> _openExistingFile(BuildContext context) async {
+  try {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      withData: true, // Récupère le contenu du fichier
+      type: FileType.custom,
+      allowedExtensions: ['txt', 'md', 'json', 'csv'],
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      PlatformFile file = result.files.first;
+      if (context.mounted) {
+        context.go('/open-existing', extra: file);
+      }
+    }
+  } catch (e) {
+    // Gestion d'erreur
+  }
+}
+```
+
+### 📌 Fonctionnalités de Sauvegarde
+
+```dart
+// Dans FileCreationScreen - Sauvegarde du fichier
+Future<void> _saveFile() async {
+  try {
+    String fileName = _fileNameController.text.isNotEmpty 
+        ? _fileNameController.text 
+        : "Nouveau fichier.txt";
+    
+    String content = _contentController.text;
+    Uint8List bytes = utf8.encode(content);
+    
+    String? result = await FilePicker.platform.saveFile(
+      fileName: fileName,
+      bytes: bytes,
+    );
+    
+    if (result != null) {
+      // Succès - afficher message de confirmation
+    }
+  } catch (e) {
+    // Gestion d'erreur
+  }
+}
+```
+
+### 🎨 Interface Adaptée par Plateforme
+
+**Sur le Web :**
+- Champ de texte modifiable pour le nom de fichier
+- Téléchargement automatique lors de la sauvegarde
+
+**Sur Mobile/Desktop :**
+- Affichage statique du nom de fichier
+- Dialogue de sauvegarde natif avec choix d'emplacement
 
 ---
 
@@ -284,23 +408,37 @@ class DishService {
 
 ```dart
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 
 final GoRouter router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
       builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/menu',
-      builder: (context, state) => const MenuScreen(),
-    ),
-    GoRoute(
-      path: '/dish/:id',
-      builder: (context, state) {
-        final id = state.pathParameters['id'];
-        return DishDetailScreen(dishId: id);
-      },
+      routes: [
+        GoRoute(
+          path: 'menu',
+          builder: (context, state) => const MenuScreen(),
+        ),
+        GoRoute(
+          path: 'edit',
+          builder: (context, state) => const EditScreen(),
+        ),
+        GoRoute(
+          path: 'open-creation',
+          builder: (context, state) {
+            final PlatformFile? file = state.extra as PlatformFile?;
+            return FileCreationScreen(file: file);
+          },
+        ),
+        GoRoute(
+          path: 'open-existing',
+          builder: (context, state) {
+            final PlatformFile? file = state.extra as PlatformFile?;
+            return FileCreationScreen(file: file);
+          },
+        ),
+      ],
     ),
   ],
 );
@@ -309,11 +447,13 @@ final GoRouter router = GoRouter(
 ### Navigation
 
 ```dart
-// Aller à une route
+// Navigation basique
 context.go('/menu');
+context.go('/edit');
 
-// Aller à une route avec paramètres
-context.go('/dish/123');
+// Navigation avec données (pour l'éditeur)
+context.go('/open-creation'); // Nouveau fichier
+context.go('/open-existing', extra: platformFile); // Fichier existant
 
 // Retour
 context.pop();
@@ -327,14 +467,22 @@ context.pop();
 lib/
 ├── main.dart
 ├── models/
-│   └── dish.dart
+│   ├── dish.dart
+│   └── cart_item.dart
 ├── viewmodels/
 │   └── app_view_model.dart
-├── screens/
-│   ├── home_screen.dart
-│   └── menu_screen.dart
-├── widgets/
-│   └── menu_widget.dart
+├── views/
+│   ├── screens/
+│   │   ├── home_screen.dart
+│   │   ├── menu_screen.dart
+│   │   ├── cart_screen.dart
+│   │   └── edit_screen.dart
+│   └── widgets/
+│       ├── menu_widget.dart
+│       ├── file_creation.dart
+│       └── form_screen.dart
+├── services/
+│   └── dish_service.dart
 └── database/
     └── database_helper.dart
 ```
@@ -349,6 +497,10 @@ lib/
 | 👀 **Afficher la liste** | `Consumer<AppViewModel>(...)` avec `viewModel.dish` dans le `builder` |
 | 🗄️ **Base de données** | `sqflite` + `path` pour la persistance locale |
 | 🛣️ **Navigation** | `go_router` pour la navigation déclarative |
+| 📝 **Créer un fichier** | `context.go('/open-creation');` |
+| 📂 **Ouvrir un fichier** | `FilePicker.platform.pickFiles(withData: true)` |
+| 💾 **Sauvegarder un fichier** | `FilePicker.platform.saveFile(fileName: name, bytes: data)` |
+
 ### 📌 Configuration avec `SharedPreferences` pour le panier
 
 Utilise `SharedPreferences` pour sauvegarder le panier :
@@ -383,11 +535,34 @@ Future<List<CartItem>> load(List<Dish> dishes) async {
 
 ---
 
+## 🎯 Fonctionnalités Principales
+
+### 🍽️ Gestion de Menu
+- ✅ Affichage dynamique des plats depuis l'API
+- ✅ Persistance locale avec SQLite
+- ✅ Ajout de nouveaux plats
+- ✅ Gestion du panier avec SharedPreferences
+
+### 📝 Éditeur de Fichiers
+- ✅ **Création** de nouveaux fichiers texte
+- ✅ **Ouverture** de fichiers existants (txt, md, json, csv)
+- ✅ **Édition** avec interface de texte dédiée
+- ✅ **Sauvegarde** avec dialogue natif
+- ✅ **Support multiplateforme** (Web, Mobile, Desktop)
+- ✅ **Encodage UTF-8** pour tous les caractères
+
+### 🌐 Support Multiplateforme
+- ✅ **Web** : Interface adaptée avec téléchargement automatique
+- ✅ **Mobile** : Dialogues natifs et stockage local
+- ✅ **Desktop** : Interface complète avec système de fichiers
+
+---
+
 ## 🚀 Démarrage Rapide
 
 1. Clone le projet
 2. Exécute les commandes d'installation ci-dessus
 3. Lance l'application avec `flutter run`
-4. Profite de ton app de menu avec gestion d'état et base de données !
+4. Profite de ton app de menu avec gestion d'état, base de données **et éditeur de fichiers intégré** !
 
-✨ **Gère tes états de façon fluide et propre avec Provider dans Flutter !**
+✨ **Gère tes états de façon fluide et propre avec Provider dans Flutter, et édite tes fichiers directement dans l'app !**
