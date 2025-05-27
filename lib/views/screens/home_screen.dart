@@ -21,6 +21,12 @@ class HomeScreen extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
+                    icon: const Icon(Icons.edit_document),
+                    onPressed: () {
+                      context.go("/edit");
+                    },
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.add_business),
                     onPressed: () {
                       context.go("/form");
