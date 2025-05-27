@@ -49,6 +49,7 @@ class DishService {
 
   Future<void> initDatabase() async {
     // Open the database
+
     if (kIsWeb) {
       // Web-specific initialization
       databaseFactory = databaseFactoryFfiWeb;
@@ -57,6 +58,7 @@ class DishService {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
     }
+
     _database = await openDatabase(
       join(await getDatabasesPath(), 'dishes.db'),
       version: 1,
