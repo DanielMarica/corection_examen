@@ -1,3 +1,4 @@
+import 'package:examen_juin1/services/dish_service.dart';
 import 'package:examen_juin1/view_models/app_view_model.dart';
 import 'package:examen_juin1/views/screens/cart_screen.dart';
 import 'package:examen_juin1/views/widgets/form_screen.dart';
@@ -23,26 +24,37 @@ final GoRouter _router = GoRouter(
     ),
   ],
 );
-void main() => runApp(
-  ChangeNotifierProvider<AppViewModel>(
-    create: (context) => AppViewModel(),
-    child: const MyApp(),
-  ),
-);
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  final dishService = DishService();
+  // Initialize the database before running the app
+  dishService.initDatabase().then((_) {
+    runApp(MyApp(dishService: dishService));
+  });
+}
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final DishService dishService;
+
+  const MyApp({super.key, required this.dishService});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Examen blanc',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => AppViewModel(dishService: dishService),
+        ),
+      ],
+      child: MaterialApp.router(
+        title: 'Examen blanc',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        routerConfig: _router,
       ),
-      routerConfig: _router,
     );
   }
 }

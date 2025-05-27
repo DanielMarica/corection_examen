@@ -12,12 +12,22 @@ import '../services/cart_service.dart';
 class AppViewModel with ChangeNotifier {
   final _dishes = <Dish>[];
   final _cart = <CartItem>[];
+  final DishService _dishService = DishService();
 
-  AppViewModel() {
-    fetchDishes().then((value) {
-      _dishes.addAll(value);
+  AppViewModel({required DishService dishService}) {
+    _loadDishes();
+  }
+
+  Future<void> _loadDishes() async {
+    try {
+      await _dishService.initDatabase();
+      final dishes = await _dishService.getDishes();
+      _dishes.clear();
+      _dishes.addAll(dishes);
       notifyListeners();
-    }, onError: (error) => log(error));
+    } catch (error) {
+      log("Error loading dishes: $error");
+    }
   }
 
   UnmodifiableListView<Dish> get dish => UnmodifiableListView(_dishes);
@@ -28,9 +38,14 @@ class AppViewModel with ChangeNotifier {
 
   double get sum => cartItem.fold(0, (a, b) => a + b.count * b.dish.price);
 
-  void addDish(Dish dish) {
-    _dishes.add(dish);
-    notifyListeners();
+  Future<void> addDish(Dish dish) async {
+    await _dishService.createDish(
+      dish.name,
+      dish.price,
+      dish.category,
+      dish.imagePath,
+    );
+    await _loadDishes();
   }
 
   Future<void> increaseDish(Dish dish) async {
